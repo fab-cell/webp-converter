@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebP to PNG Converter - Free Online Tool</title>
-    <meta name="description" content="Convert WebP images to PNG format for free. Fast, secure, and unlimited conversions. No registration required.">
+    <title>Image to PNG Converter - Free Online Tool</title>
+    <meta name="description" content="Convert WebP, JPEG, and AVIF images to PNG format for free. Fast, secure, and unlimited conversions. No registration required.">
     <style>
         * {
             margin: 0;
@@ -52,6 +52,38 @@
             color: #64748b;
             max-width: 400px;
             margin: 0 auto;
+        }
+
+        .format-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin-bottom: 24px;
+        }
+
+        .tab-button {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            border-color: #4f46e5;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
         .upload-zone {
@@ -288,14 +320,31 @@
                 grid-template-columns: repeat(2, 1fr);
                 gap: 16px;
             }
+
+            .format-tabs {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .tab-button {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="main-container">
         <div class="header">
-            <h1 class="title">WebP to PNG Converter</h1>
-            <p class="subtitle">Convert your WebP images to PNG format instantly. Free, secure, and unlimited conversions.</p>
+            <h1 class="title" id="mainTitle">WebP to PNG Converter</h1>
+            <p class="subtitle">Convert your images to PNG format instantly. Free, secure, and unlimited conversions.</p>
+        </div>
+
+        <!-- Format Tabs -->
+        <div class="format-tabs">
+            <button class="tab-button active" data-format="webp">WebP → PNG</button>
+            <button class="tab-button" data-format="jpeg">JPEG → PNG</button>
+            <button class="tab-button" data-format="avif">AVIF → PNG</button>
         </div>
 
         <div class="upload-zone" id="uploadZone">
@@ -303,8 +352,8 @@
                 <span class="arrow">🪄</span>
                 <span>Wiz-Marketing Tool-Box</span>
             </div>
-            <div class="upload-title">Drop your WebP files here</div>
-            <div class="upload-description">or click to select files</div>
+            <div class="upload-title" id="uploadTitle">Drop your WebP files here</div>
+            <div class="upload-description" id="uploadDescription">or click to select WebP files</div>
         </div>
 
         <input type="file" id="fileInput" class="file-input" accept=".webp" multiple>
@@ -376,6 +425,74 @@
 
         let selectedFiles = [];
         let convertedFiles = [];
+        let currentFormat = 'webp';
+
+        // Format configuration
+        const formatConfig = {
+            webp: {
+                title: 'Image to PNG Converter',
+                uploadTitle: 'Drop your WebP files here',
+                uploadDesc: 'or click to select WebP files',
+                accept: '.webp',
+                mimeTypes: ['image/webp'],
+                extensions: ['.webp']
+            },
+            jpeg: {
+                title: 'Image to PNG Converter',
+                uploadTitle: 'Drop your JPEG files here',
+                uploadDesc: 'or click to select JPEG files',
+                accept: '.jpg,.jpeg',
+                mimeTypes: ['image/jpeg', 'image/jpg'],
+                extensions: ['.jpg', '.jpeg']
+            },
+            avif: {
+                title: 'Image to PNG Converter',
+                uploadTitle: 'Drop your AVIF files here',
+                uploadDesc: 'or click to select AVIF files',
+                accept: '.avif',
+                mimeTypes: ['image/avif'],
+                extensions: ['.avif']
+            }
+        };
+
+        // Tab switching functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => switchFormat(button.dataset.format));
+        });
+
+        function switchFormat(format) {
+            currentFormat = format;
+            const config = formatConfig[format];
+            
+            // Update UI
+            document.getElementById('mainTitle').textContent = config.title;
+            document.getElementById('uploadTitle').textContent = config.uploadTitle;
+            document.getElementById('uploadDescription').textContent = config.uploadDesc;
+            document.getElementById('fileInput').accept = config.accept;
+            
+            // Update active tab
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-format="${format}"]`).classList.add('active');
+            
+            // Reset form
+            resetForm();
+        }
+
+        function resetForm() {
+            selectedFiles = [];
+            convertedFiles = [];
+            filePreview.style.display = 'none';
+            convertBtn.style.display = 'none';
+            successMessage.style.display = 'none';
+            progressContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+        }
+
+        function isValidFileType(file) {
+            const config = formatConfig[currentFormat];
+            return config.mimeTypes.includes(file.type) || 
+                   config.extensions.some(ext => file.name.toLowerCase().endsWith(ext));
+        }
 
         // Upload zone interactions
         uploadZone.addEventListener('click', () => fileInput.click());
@@ -394,14 +511,12 @@
             e.preventDefault();
             uploadZone.classList.remove('drag-active');
             
-            const files = Array.from(e.dataTransfer.files).filter(file => 
-                file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp')
-            );
+            const files = Array.from(e.dataTransfer.files).filter(file => isValidFileType(file));
             
             if (files.length > 0) {
                 handleFileSelection(files);
             } else {
-                alert('Please select WebP files only.');
+                alert(`Please select ${currentFormat.toUpperCase()} files only.`);
             }
         });
 
@@ -465,8 +580,8 @@
                     progressPercent.textContent = Math.round(progress) + '%';
                     progressText.textContent = `Converting ${i + 1} of ${selectedFiles.length} files...`;
                     
-                    const convertedBlob = await convertWebPToPNG(file);
-                    const fileName = file.name.replace(/\.webp$/i, '.png');
+                    const convertedBlob = await convertImageToPNG(file);
+                    const fileName = file.name.replace(/\.(webp|jpg|jpeg|avif)$/i, '.png');
                     
                     convertedFiles.push({
                         blob: convertedBlob,
@@ -499,7 +614,7 @@
             }
         }
 
-        function convertWebPToPNG(file) {
+        function convertImageToPNG(file) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -576,8 +691,8 @@
         // Share functionality
         function shareWebsite() {
             const url = window.location.href;
-            const title = 'Free WebP to PNG Converter - No Limits!';
-            const text = 'Convert your WebP images to PNG for free with no file size or quantity limits!';
+            const title = 'Free Image to PNG Converter - No Limits!';
+            const text = 'Convert WebP, JPEG, and AVIF images to PNG for free with no file size or quantity limits!';
 
             // Check if native sharing is available (mobile browsers)
             if (navigator.share) {
