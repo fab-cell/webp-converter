@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image to PNG Converter - Free Online Tool</title>
     <meta name="description" content="Convert WebP, JPEG, and AVIF images to PNG format for free. Fast, secure, and unlimited conversions. No registration required.">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkltYWdlIHRvIFBORyBDb252ZXJ0ZXIiLAogICJzaG9ydF9uYW1lIjogIkltYWdlQ29udmVydGVyIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJ0aGVtZV9jb2xvciI6ICIjNGY0NmU1IiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIgp9">
     <style>
         * {
             margin: 0;
@@ -59,6 +60,7 @@
             justify-content: center;
             gap: 4px;
             margin-bottom: 24px;
+            role: tablist;
         }
 
         .tab-button {
@@ -71,11 +73,17 @@
             color: #64748b;
             cursor: pointer;
             transition: all 0.3s ease;
+            role: tab;
         }
 
         .tab-button:hover {
             background: #e2e8f0;
             color: #475569;
+        }
+
+        .tab-button:focus {
+            outline: 2px solid #4f46e5;
+            outline-offset: 2px;
         }
 
         .tab-button.active {
@@ -95,18 +103,27 @@
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            role: button;
+            tabindex: 0;
         }
 
-        .upload-zone:hover {
+        .upload-zone:hover, .upload-zone:focus {
             border-color: #4f46e5;
             background: #f1f5f9;
             transform: translateY(-2px);
+            outline: none;
         }
 
         .upload-zone.drag-active {
             border-color: #4f46e5;
             background: #eef2ff;
             box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .upload-zone.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         .upload-icon {
@@ -170,6 +187,36 @@
             font-size: 0.875rem;
         }
 
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dcfce7;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .remove-file {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .remove-file:hover {
+            background: #dc2626;
+        }
+
         .convert-button {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
@@ -194,6 +241,11 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .convert-button:focus {
+            outline: 2px solid #4f46e5;
+            outline-offset: 2px;
         }
 
         .progress-container {
@@ -224,14 +276,23 @@
             transition: width 0.3s ease;
         }
 
-        .success-message {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
+        .success-message, .error-message {
             padding: 20px;
             border-radius: 12px;
             margin: 24px 0;
             display: none;
+        }
+
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
         }
 
         .download-button {
@@ -245,12 +306,19 @@
             display: inline-block;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+            border: none;
+            cursor: pointer;
         }
 
         .download-button:hover {
             background: #047857;
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+        }
+
+        .download-button:focus {
+            outline: 2px solid #059669;
+            outline-offset: 2px;
         }
 
         .features-grid {
@@ -275,15 +343,17 @@
         .share-card {
             cursor: pointer;
             position: relative;
+            tabindex: 0;
         }
 
-        .share-card:hover {
+        .share-card:hover, .share-card:focus {
             background: #f1f5f9;
             transform: translateY(-6px);
+            outline: none;
         }
 
-        .share-card:active {
-            transform: translateY(-2px);
+        .share-card:focus {
+            box-shadow: 0 0 0 2px #4f46e5;
         }
 
         .feature-icon {
@@ -300,6 +370,50 @@
             font-weight: 600;
             color: #334155;
             font-size: 0.875rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: #059669;
+            color: white;
+        }
+
+        .notification.error {
+            background: #dc2626;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
         @media (max-width: 640px) {
@@ -331,6 +445,14 @@
                 font-size: 0.8rem;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -341,31 +463,33 @@
         </div>
 
         <!-- Format Tabs -->
-        <div class="format-tabs">
-            <button class="tab-button active" data-format="webp">WebP → PNG</button>
-            <button class="tab-button" data-format="jpeg">JPEG → PNG</button>
-            <button class="tab-button" data-format="avif">AVIF → PNG</button>
+        <div class="format-tabs" role="tablist" aria-label="Select input format">
+            <button class="tab-button active" data-format="webp" role="tab" aria-selected="true" aria-controls="upload-panel">WebP → PNG</button>
+            <button class="tab-button" data-format="jpeg" role="tab" aria-selected="false" aria-controls="upload-panel">JPEG → PNG</button>
+            <button class="tab-button" data-format="avif" role="tab" aria-selected="false" aria-controls="upload-panel">AVIF → PNG</button>
         </div>
 
-        <div class="upload-zone" id="uploadZone">
+        <div class="upload-zone" id="uploadZone" role="button" tabindex="0" 
+             aria-label="Upload image files for conversion" 
+             aria-describedby="uploadDescription">
             <div class="upload-icon">
                 <span class="arrow">🪄</span>
                 <span>Wiz-Marketing Tool-Box</span>
             </div>
             <div class="upload-title" id="uploadTitle">Drop your WebP files here</div>
-            <div class="upload-description" id="uploadDescription">or click to select WebP files</div>
+            <div class="upload-description" id="uploadDescription">or click to select WebP files (Max 50MB each)</div>
         </div>
 
-        <input type="file" id="fileInput" class="file-input" accept=".webp" multiple>
+        <input type="file" id="fileInput" class="file-input" accept=".webp" multiple aria-label="Select image files">
 
-        <div class="file-preview" id="filePreview">
+        <div class="file-preview" id="filePreview" role="region" aria-label="Selected files">
             <h4>Selected Files:</h4>
             <div class="file-details" id="fileDetails"></div>
         </div>
 
-        <button class="convert-button" id="convertBtn">Convert to PNG</button>
+        <button class="convert-button" id="convertBtn" aria-describedby="progressContainer">Convert to PNG</button>
 
-        <div class="progress-container" id="progressContainer">
+        <div class="progress-container" id="progressContainer" role="progressbar" aria-live="polite">
             <div class="progress-info">
                 <span id="progressText">Converting files...</span>
                 <span id="progressPercent">0%</span>
@@ -375,11 +499,16 @@
             </div>
         </div>
 
-        <div class="success-message" id="successMessage">
+        <div class="success-message" id="successMessage" role="alert">
             <h4>✅ Conversion Complete!</h4>
             <p>Your files have been successfully converted to PNG format.</p>
             <br>
-            <a href="#" class="download-button" id="downloadBtn">Download PNG Files</a>
+            <button class="download-button" id="downloadBtn">Download PNG Files</button>
+        </div>
+
+        <div class="error-message" id="errorMessage" role="alert">
+            <h4>❌ Conversion Failed</h4>
+            <p id="errorText">An error occurred during conversion.</p>
         </div>
 
         <div class="features-grid">
@@ -397,13 +526,13 @@
             </div>
             <div class="feature-card">
                 <span class="feature-icon">📏</span>
-                <div class="feature-title">No File Size Limits</div>
+                <div class="feature-title">Smart Processing</div>
             </div>
             <div class="feature-card">
                 <span class="feature-icon">♾️</span>
-                <div class="feature-title">No Quantity Limits</div>
+                <div class="feature-title">Batch Convert</div>
             </div>
-            <div class="feature-card share-card" onclick="shareWebsite()">
+            <div class="feature-card share-card" tabindex="0" role="button" aria-label="Share this tool" onclick="shareWebsite()" onkeypress="handleShareKeyPress(event)">
                 <span class="feature-icon">📤</span>
                 <div class="feature-title">Share This Tool</div>
             </div>
@@ -411,377 +540,666 @@
     </div>
 
     <script>
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-        const filePreview = document.getElementById('filePreview');
-        const fileDetails = document.getElementById('fileDetails');
-        const convertBtn = document.getElementById('convertBtn');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const progressPercent = document.getElementById('progressPercent');
-        const successMessage = document.getElementById('successMessage');
-        const downloadBtn = document.getElementById('downloadBtn');
+        class ImageConverter {
+            constructor() {
+                this.uploadZone = document.getElementById('uploadZone');
+                this.fileInput = document.getElementById('fileInput');
+                this.filePreview = document.getElementById('filePreview');
+                this.fileDetails = document.getElementById('fileDetails');
+                this.convertBtn = document.getElementById('convertBtn');
+                this.progressContainer = document.getElementById('progressContainer');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.progressPercent = document.getElementById('progressPercent');
+                this.successMessage = document.getElementById('successMessage');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.downloadBtn = document.getElementById('downloadBtn');
 
-        let selectedFiles = [];
-        let convertedFiles = [];
-        let currentFormat = 'webp';
+                this.selectedFiles = [];
+                this.convertedFiles = [];
+                this.currentFormat = 'webp';
+                this.isConverting = false;
+                this.objectUrls = new Set(); // Track object URLs for cleanup
 
-        // Format configuration
-        const formatConfig = {
-            webp: {
-                title: 'Image to PNG Converter',
-                uploadTitle: 'Drop your WebP files here',
-                uploadDesc: 'or click to select WebP files',
-                accept: '.webp',
-                mimeTypes: ['image/webp'],
-                extensions: ['.webp']
-            },
-            jpeg: {
-                title: 'Image to PNG Converter',
-                uploadTitle: 'Drop your JPEG files here',
-                uploadDesc: 'or click to select JPEG files',
-                accept: '.jpg,.jpeg',
-                mimeTypes: ['image/jpeg', 'image/jpg'],
-                extensions: ['.jpg', '.jpeg']
-            },
-            avif: {
-                title: 'Image to PNG Converter',
-                uploadTitle: 'Drop your AVIF files here',
-                uploadDesc: 'or click to select AVIF files',
-                accept: '.avif',
-                mimeTypes: ['image/avif'],
-                extensions: ['.avif']
+                // Configuration with enhanced validation
+                this.formatConfig = {
+                    webp: {
+                        title: 'Image to PNG Converter',
+                        uploadTitle: 'Drop your WebP files here',
+                        uploadDesc: 'or click to select WebP files (Max 50MB each)',
+                        accept: '.webp',
+                        mimeTypes: ['image/webp'],
+                        extensions: ['.webp']
+                    },
+                    jpeg: {
+                        title: 'Image to PNG Converter',
+                        uploadTitle: 'Drop your JPEG files here',
+                        uploadDesc: 'or click to select JPEG files (Max 50MB each)',
+                        accept: '.jpg,.jpeg',
+                        mimeTypes: ['image/jpeg', 'image/jpg'],
+                        extensions: ['.jpg', '.jpeg']
+                    },
+                    avif: {
+                        title: 'Image to PNG Converter',
+                        uploadTitle: 'Drop your AVIF files here',
+                        uploadDesc: 'or click to select AVIF files (Max 50MB each)',
+                        accept: '.avif',
+                        mimeTypes: ['image/avif'],
+                        extensions: ['.avif']
+                    }
+                };
+
+                this.MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+                this.MAX_FILES = 50; // Maximum files per batch
+                this.BATCH_SIZE = 3; // Process 3 files simultaneously
+
+                this.init();
             }
-        };
 
-        // Tab switching functionality
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => switchFormat(button.dataset.format));
-        });
-
-        function switchFormat(format) {
-            currentFormat = format;
-            const config = formatConfig[format];
-            
-            // Update UI
-            document.getElementById('mainTitle').textContent = config.title;
-            document.getElementById('uploadTitle').textContent = config.uploadTitle;
-            document.getElementById('uploadDescription').textContent = config.uploadDesc;
-            document.getElementById('fileInput').accept = config.accept;
-            
-            // Update active tab
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-format="${format}"]`).classList.add('active');
-            
-            // Reset form
-            resetForm();
-        }
-
-        function resetForm() {
-            selectedFiles = [];
-            convertedFiles = [];
-            filePreview.style.display = 'none';
-            convertBtn.style.display = 'none';
-            successMessage.style.display = 'none';
-            progressContainer.style.display = 'none';
-            progressFill.style.width = '0%';
-        }
-
-        function isValidFileType(file) {
-            const config = formatConfig[currentFormat];
-            return config.mimeTypes.includes(file.type) || 
-                   config.extensions.some(ext => file.name.toLowerCase().endsWith(ext));
-        }
-
-        // Upload zone interactions
-        uploadZone.addEventListener('click', () => fileInput.click());
-
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('drag-active');
-        });
-
-        uploadZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('drag-active');
-        });
-
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('drag-active');
-            
-            const files = Array.from(e.dataTransfer.files).filter(file => isValidFileType(file));
-            
-            if (files.length > 0) {
-                handleFileSelection(files);
-            } else {
-                alert(`Please select ${currentFormat.toUpperCase()} files only.`);
+            init() {
+                this.setupEventListeners();
+                this.setupKeyboardNavigation();
+                this.registerServiceWorker();
             }
-        });
 
-        fileInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length > 0) {
-                handleFileSelection(files);
-            }
-        });
-
-        function handleFileSelection(files) {
-            selectedFiles = files;
-            
-            let detailsHTML = '';
-            let totalSize = 0;
-            
-            files.forEach((file, index) => {
-                detailsHTML += `<div style="margin-bottom: 8px;">
-                    <strong>${file.name}</strong> - ${formatFileSize(file.size)}
-                </div>`;
-                totalSize += file.size;
-            });
-            
-            detailsHTML += `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #bbf7d0;">
-                <strong>Total: ${files.length} files (${formatFileSize(totalSize)})</strong>
-            </div>`;
-            
-            fileDetails.innerHTML = detailsHTML;
-            filePreview.style.display = 'block';
-            convertBtn.style.display = 'inline-block';
-            successMessage.style.display = 'none';
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        convertBtn.addEventListener('click', convertFiles);
-
-        async function convertFiles() {
-            if (selectedFiles.length === 0) return;
-
-            convertBtn.disabled = true;
-            convertBtn.textContent = 'Converting...';
-            progressContainer.style.display = 'block';
-            successMessage.style.display = 'none';
-
-            try {
-                convertedFiles = [];
-                
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    const file = selectedFiles[i];
-                    const progress = ((i + 1) / selectedFiles.length) * 100;
-                    
-                    // Update progress display
-                    progressFill.style.width = progress + '%';
-                    progressPercent.textContent = Math.round(progress) + '%';
-                    progressText.textContent = `Converting ${i + 1} of ${selectedFiles.length} files...`;
-                    
-                    const convertedBlob = await convertImageToPNG(file);
-                    const fileName = file.name.replace(/\.(webp|jpg|jpeg|avif)$/i, '.png');
-                    
-                    convertedFiles.push({
-                        blob: convertedBlob,
-                        name: fileName
+            setupEventListeners() {
+                // Tab switching
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', (e) => this.switchFormat(e.target.dataset.format));
+                    button.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.switchFormat(e.target.dataset.format);
+                        }
                     });
+                });
+
+                // Upload zone interactions
+                this.uploadZone.addEventListener('click', () => !this.isConverting && this.fileInput.click());
+                this.uploadZone.addEventListener('keypress', (e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !this.isConverting) {
+                        e.preventDefault();
+                        this.fileInput.click();
+                    }
+                });
+
+                // Drag and drop
+                this.uploadZone.addEventListener('dragover', (e) => this.handleDragOver(e));
+                this.uploadZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+                this.uploadZone.addEventListener('drop', (e) => this.handleDrop(e));
+
+                // File input
+                this.fileInput.addEventListener('change', (e) => this.handleFileInput(e));
+
+                // Convert button
+                this.convertBtn.addEventListener('click', () => this.convertFiles());
+
+                // Clean up on page unload
+                window.addEventListener('beforeunload', () => this.cleanup());
+            }
+
+            setupKeyboardNavigation() {
+                // Improve keyboard navigation for accessibility
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.cancelOperation();
+                    }
+                });
+            }
+
+            async registerServiceWorker() {
+                // Service Worker registration disabled for blob-based environments
+                // In production, you would register a proper service worker file
+                if ('serviceWorker' in navigator && window.location.protocol !== 'blob:') {
+                    try {
+                        // Register your service worker file here: await navigator.serviceWorker.register('/sw.js');
+                        console.log('Service worker ready for production deployment');
+                    } catch (error) {
+                        console.log('Service worker registration failed:', error);
+                    }
+                }
+            }
+
+            switchFormat(format) {
+                if (this.isConverting) return;
+
+                this.currentFormat = format;
+                const config = this.formatConfig[format];
+                
+                // Update UI
+                document.getElementById('mainTitle').textContent = config.title;
+                document.getElementById('uploadTitle').textContent = config.uploadTitle;
+                document.getElementById('uploadDescription').textContent = config.uploadDesc;
+                this.fileInput.accept = config.accept;
+                
+                // Update active tab and ARIA attributes
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    const isActive = btn.dataset.format === format;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive);
+                });
+                
+                this.resetForm();
+            }
+
+            resetForm() {
+                this.cleanup();
+                this.selectedFiles = [];
+                this.convertedFiles = [];
+                this.filePreview.style.display = 'none';
+                this.convertBtn.style.display = 'none';
+                this.successMessage.style.display = 'none';
+                this.errorMessage.style.display = 'none';
+                this.progressContainer.style.display = 'none';
+                this.progressFill.style.width = '0%';
+                this.uploadZone.classList.remove('disabled');
+                this.isConverting = false;
+            }
+
+            cleanup() {
+                // Clean up all object URLs to prevent memory leaks
+                this.objectUrls.forEach(url => URL.revokeObjectURL(url));
+                this.objectUrls.clear();
+            }
+
+            validateFile(file) {
+                const config = this.formatConfig[this.currentFormat];
+                
+                // Check file size
+                if (file.size > this.MAX_FILE_SIZE) {
+                    throw new Error(`File "${file.name}" is too large. Maximum size is 50MB.`);
+                }
+                
+                // Check file type
+                const isValidType = config.mimeTypes.includes(file.type) || 
+                                   config.extensions.some(ext => file.name.toLowerCase().endsWith(ext));
+                
+                if (!isValidType) {
+                    throw new Error(`File "${file.name}" is not a valid ${this.currentFormat.toUpperCase()} file.`);
+                }
+                
+                return true;
+            }
+
+            validateFiles(files) {
+                if (files.length === 0) {
+                    throw new Error('No files selected.');
+                }
+                
+                if (files.length > this.MAX_FILES) {
+                    throw new Error(`Too many files selected. Maximum is ${this.MAX_FILES} files.`);
                 }
 
-                // Conversion complete
-                setTimeout(() => {
-                    progressContainer.style.display = 'none';
-                    successMessage.style.display = 'block';
-                    convertBtn.disabled = false;
-                    convertBtn.textContent = 'Convert to PNG';
-                    
-                    // Reset progress display
-                    progressFill.style.width = '0%';
-                    progressPercent.textContent = '0%';
-                    progressText.textContent = 'Converting files...';
-                    
-                    setupDownload();
-                }, 500);
+                const validFiles = [];
+                const errors = [];
 
-            } catch (error) {
-                console.error('Conversion failed:', error);
-                alert('Conversion failed. Please try again with different files.');
-                
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert to PNG';
-                progressContainer.style.display = 'none';
+                files.forEach(file => {
+                    try {
+                        this.validateFile(file);
+                        validFiles.push(file);
+                    } catch (error) {
+                        errors.push(error.message);
+                    }
+                });
+
+                if (errors.length > 0 && validFiles.length === 0) {
+                    throw new Error(errors.join('\n'));
+                } else if (errors.length > 0) {
+                    this.showNotification(`Some files were skipped: ${errors.join(', ')}`, 'error');
+                }
+
+                return validFiles;
             }
-        }
 
-        function convertImageToPNG(file) {
-            return new Promise((resolve, reject) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
+            handleDragOver(e) {
+                if (this.isConverting) return;
+                e.preventDefault();
+                this.uploadZone.classList.add('drag-active');
+            }
 
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
+            handleDragLeave(e) {
+                e.preventDefault();
+                this.uploadZone.classList.remove('drag-active');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                this.uploadZone.classList.remove('drag-active');
+                
+                if (this.isConverting) return;
+                
+                try {
+                    const files = Array.from(e.dataTransfer.files);
+                    const validFiles = this.validateFiles(files);
+                    this.handleFileSelection(validFiles);
+                } catch (error) {
+                    this.showError(error.message);
+                }
+            }
+
+            handleFileInput(e) {
+                if (this.isConverting) return;
+                
+                try {
+                    const files = Array.from(e.target.files);
+                    const validFiles = this.validateFiles(files);
+                    this.handleFileSelection(validFiles);
+                } catch (error) {
+                    this.showError(error.message);
+                }
+            }
+
+            handleFileSelection(files) {
+                this.selectedFiles = files;
+                this.displayFilePreview();
+                this.convertBtn.style.display = 'inline-block';
+                this.errorMessage.style.display = 'none';
+                this.successMessage.style.display = 'none';
+            }
+
+            displayFilePreview() {
+                let detailsHTML = '';
+                let totalSize = 0;
+                
+                this.selectedFiles.forEach((file, index) => {
+                    detailsHTML += `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <strong>${this.escapeHtml(file.name)}</strong> - ${this.formatFileSize(file.size)}
+                            </div>
+                            <button class="remove-file" onclick="imageConverter.removeFile(${index})" aria-label="Remove ${this.escapeHtml(file.name)}">
+                                ✕
+                            </button>
+                        </div>
+                    `;
+                    totalSize += file.size;
+                });
+                
+                detailsHTML += `
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #bbf7d0;">
+                        <strong>Total: ${this.selectedFiles.length} files (${this.formatFileSize(totalSize)})</strong>
+                    </div>
+                `;
+                
+                this.fileDetails.innerHTML = detailsHTML;
+                this.filePreview.style.display = 'block';
+            }
+
+            removeFile(index) {
+                if (this.isConverting) return;
+                
+                this.selectedFiles.splice(index, 1);
+                
+                if (this.selectedFiles.length === 0) {
+                    this.resetForm();
+                } else {
+                    this.displayFilePreview();
+                }
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            async convertFiles() {
+                if (this.selectedFiles.length === 0 || this.isConverting) return;
+
+                this.isConverting = true;
+                this.convertBtn.disabled = true;
+                this.convertBtn.textContent = 'Converting...';
+                this.progressContainer.style.display = 'block';
+                this.successMessage.style.display = 'none';
+                this.errorMessage.style.display = 'none';
+                this.uploadZone.classList.add('disabled');
+
+                try {
+                    this.convertedFiles = [];
+                    await this.processFilesInBatches();
+                    this.showSuccess();
+                } catch (error) {
+                    console.error('Conversion failed:', error);
+                    this.showError(this.getErrorMessage(error));
+                } finally {
+                    this.resetConversionState();
+                }
+            }
+
+            async processFilesInBatches() {
+                const totalFiles = this.selectedFiles.length;
+                let processedFiles = 0;
+
+                for (let i = 0; i < totalFiles; i += this.BATCH_SIZE) {
+                    const batch = this.selectedFiles.slice(i, i + this.BATCH_SIZE);
                     
-                    // Clear canvas to preserve transparency
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    ctx.drawImage(img, 0, 0);
-                    
-                    canvas.toBlob((blob) => {
-                        URL.revokeObjectURL(img.src);
-                        if (blob) {
-                            resolve(blob);
-                        } else {
-                            reject(new Error('Failed to convert image'));
+                    // Process batch in parallel
+                    const promises = batch.map(async (file, batchIndex) => {
+                        try {
+                            const convertedBlob = await this.convertImageToPNG(file);
+                            const fileName = file.name.replace(/\.(webp|jpg|jpeg|avif)$/i, '.png');
+                            
+                            return {
+                                blob: convertedBlob,
+                                name: fileName,
+                                originalSize: file.size,
+                                newSize: convertedBlob.size
+                            };
+                        } catch (error) {
+                            console.error(`Failed to convert ${file.name}:`, error);
+                            throw new Error(`Failed to convert "${file.name}": ${error.message}`);
                         }
-                    }, 'image/png', 1.0);
-                };
+                    });
 
-                img.onerror = () => {
-                    URL.revokeObjectURL(img.src);
-                    reject(new Error('Failed to load image'));
-                };
+                    const batchResults = await Promise.all(promises);
+                    this.convertedFiles.push(...batchResults);
+
+                    // Update progress
+                    processedFiles += batch.length;
+                    const progress = (processedFiles / totalFiles) * 100;
+                    this.updateProgress(processedFiles, totalFiles, Math.round(progress));
+
+                    // Small delay to prevent UI blocking
+                    if (i + this.BATCH_SIZE < totalFiles) {
+                        await this.delay(100);
+                    }
+                }
+            }
+
+            convertImageToPNG(file) {
+                return new Promise((resolve, reject) => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    const objectURL = URL.createObjectURL(file);
+
+                    // Track object URL for cleanup
+                    this.objectUrls.add(objectURL);
+
+                    // Set up timeout for large files
+                    const timeout = setTimeout(() => {
+                        this.cleanupImageConversion(objectURL, img);
+                        reject(new Error(`Timeout converting ${file.name}`));
+                    }, 30000); // 30 second timeout
+
+                    img.onload = () => {
+                        try {
+                            clearTimeout(timeout);
+                            
+                            // Set canvas dimensions
+                            canvas.width = img.naturalWidth;
+                            canvas.height = img.naturalHeight;
+                            
+                            // Clear canvas to preserve transparency
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Draw image
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // Convert to PNG with high quality
+                            canvas.toBlob((blob) => {
+                                this.cleanupImageConversion(objectURL, img);
+                                
+                                if (blob) {
+                                    resolve(blob);
+                                } else {
+                                    reject(new Error(`Failed to convert ${file.name} to PNG`));
+                                }
+                            }, 'image/png', 1.0);
+                            
+                        } catch (error) {
+                            clearTimeout(timeout);
+                            this.cleanupImageConversion(objectURL, img);
+                            reject(new Error(`Error processing ${file.name}: ${error.message}`));
+                        }
+                    };
+
+                    img.onerror = () => {
+                        clearTimeout(timeout);
+                        this.cleanupImageConversion(objectURL, img);
+                        reject(new Error(`Failed to load image: ${file.name}`));
+                    };
+                    
+                    img.src = objectURL;
+                });
+            }
+
+            cleanupImageConversion(objectURL, img) {
+                if (objectURL && this.objectUrls.has(objectURL)) {
+                    URL.revokeObjectURL(objectURL);
+                    this.objectUrls.delete(objectURL);
+                }
+                if (img) {
+                    img.src = '';
+                }
+            }
+
+            updateProgress(current, total, percentage) {
+                this.progressFill.style.width = percentage + '%';
+                this.progressPercent.textContent = percentage + '%';
+                this.progressText.textContent = `Converting ${current} of ${total} files...`;
                 
-                img.src = URL.createObjectURL(file);
-            });
-        }
+                // Update ARIA attributes for screen readers
+                this.progressContainer.setAttribute('aria-valuenow', percentage);
+                this.progressContainer.setAttribute('aria-valuetext', `${percentage}% complete, ${current} of ${total} files converted`);
+            }
 
-        function setupDownload() {
-            if (convertedFiles.length === 1) {
-                // Single file download
-                const file = convertedFiles[0];
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            getErrorMessage(error) {
+                if (error.name === 'QuotaExceededError') {
+                    return 'Not enough memory available. Try converting fewer files or smaller images.';
+                } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+                    return 'Conversion timed out. The image may be too large or complex.';
+                } else if (error.message.includes('load')) {
+                    return 'Unable to read one or more image files. Please check if the files are valid.';
+                } else if (error.message.includes('network') || error.message.includes('Network')) {
+                    return 'Network error occurred. Please check your connection and try again.';
+                } else {
+                    return error.message || 'An unexpected error occurred during conversion.';
+                }
+            }
+
+            resetConversionState() {
+                this.isConverting = false;
+                this.convertBtn.disabled = false;
+                this.convertBtn.textContent = 'Convert to PNG';
+                this.uploadZone.classList.remove('disabled');
+                
+                setTimeout(() => {
+                    this.progressContainer.style.display = 'none';
+                    this.progressFill.style.width = '0%';
+                    this.progressPercent.textContent = '0%';
+                    this.progressText.textContent = 'Converting files...';
+                }, 1000);
+            }
+
+            showSuccess() {
+                this.successMessage.style.display = 'block';
+                this.setupDownload();
+                
+                // Show conversion statistics
+                const totalOriginalSize = this.selectedFiles.reduce((sum, file) => sum + file.size, 0);
+                const totalNewSize = this.convertedFiles.reduce((sum, file) => sum + file.blob.size, 0);
+                const compressionRatio = ((totalOriginalSize - totalNewSize) / totalOriginalSize * 100).toFixed(1);
+                
+                this.showNotification(
+                    `Conversion complete! ${this.convertedFiles.length} files converted. ${compressionRatio > 0 ? `Size reduced by ${compressionRatio}%` : ''}`,
+                    'success'
+                );
+            }
+
+            showError(message) {
+                document.getElementById('errorText').textContent = message;
+                this.errorMessage.style.display = 'block';
+                this.showNotification(message, 'error');
+            }
+
+            setupDownload() {
+                if (this.convertedFiles.length === 1) {
+                    // Single file download
+                    const file = this.convertedFiles[0];
+                    this.downloadBtn.onclick = () => this.downloadSingleFile(file);
+                    this.downloadBtn.textContent = 'Download PNG';
+                } else {
+                    // Multiple files download
+                    this.downloadBtn.onclick = () => this.downloadAllFiles();
+                    this.downloadBtn.textContent = `Download ${this.convertedFiles.length} PNG Files`;
+                }
+            }
+
+            downloadSingleFile(file) {
                 const url = URL.createObjectURL(file.blob);
-                downloadBtn.href = url;
-                downloadBtn.download = file.name;
-                downloadBtn.textContent = 'Download PNG';
-            } else {
-                // Multiple files download
-                downloadBtn.textContent = `Download ${convertedFiles.length} PNG Files`;
-                downloadBtn.onclick = (e) => {
-                    e.preventDefault();
-                    downloadAllFiles();
-                };
+                this.objectUrls.add(url);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                a.style.display = 'none';
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                // Clean up after a delay
+                setTimeout(() => {
+                    if (this.objectUrls.has(url)) {
+                        URL.revokeObjectURL(url);
+                        this.objectUrls.delete(url);
+                    }
+                }, 1000);
+            }
+
+            downloadAllFiles() {
+                if (this.convertedFiles.length === 0) return;
+
+                // Check if browser supports download attribute for multiple files
+                this.convertedFiles.forEach((file, index) => {
+                    setTimeout(() => {
+                        this.downloadSingleFile(file);
+                    }, index * 300); // Stagger downloads to avoid browser blocking
+                });
+
+                this.showNotification(`Starting download of ${this.convertedFiles.length} files...`, 'success');
+            }
+
+            cancelOperation() {
+                if (this.isConverting) {
+                    this.isConverting = false;
+                    this.resetConversionState();
+                    this.showNotification('Operation cancelled', 'error');
+                }
+            }
+
+            showNotification(message, type = 'success') {
+                // Remove existing notifications
+                document.querySelectorAll('.notification').forEach(n => n.remove());
+
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                notification.setAttribute('role', 'alert');
+                notification.setAttribute('aria-live', 'polite');
+                
+                document.body.appendChild(notification);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    notification.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
             }
         }
 
-        function downloadAllFiles() {
-            convertedFiles.forEach((file, index) => {
-                setTimeout(() => {
-                    const url = URL.createObjectURL(file.blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = file.name;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    setTimeout(() => URL.revokeObjectURL(url), 100);
-                }, index * 200);
-            });
-        }
+        // Global instance
+        const imageConverter = new ImageConverter();
 
-        // Reset state when new files are selected
-        fileInput.addEventListener('click', () => {
-            progressContainer.style.display = 'none';
-            successMessage.style.display = 'none';
-            progressFill.style.width = '0%';
-        });
-
-        // Share functionality
+        // Global functions for inline event handlers (for backwards compatibility)
         function shareWebsite() {
             const url = window.location.href;
             const title = 'Free Image to PNG Converter - No Limits!';
             const text = 'Convert WebP, JPEG, and AVIF images to PNG for free with no file size or quantity limits!';
 
-            // Check if native sharing is available (mobile browsers)
             if (navigator.share) {
-                navigator.share({
-                    title: title,
-                    text: text,
-                    url: url
-                }).then(() => {
-                    console.log('Thanks for sharing!');
-                }).catch((error) => {
-                    console.log('Error sharing:', error);
-                    fallbackShare(url, title, text);
-                });
+                navigator.share({ title, text, url })
+                    .then(() => imageConverter.showNotification('Thanks for sharing!', 'success'))
+                    .catch(() => fallbackShare(url, title, text));
             } else {
                 fallbackShare(url, title, text);
             }
         }
 
+        function handleShareKeyPress(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                shareWebsite();
+            }
+        }
+
         function fallbackShare(url, title, text) {
-            // Copy to clipboard
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(url).then(() => {
-                    showShareMessage('Link copied to clipboard! Share it with your friends.');
-                }).catch(() => {
-                    showShareOptions(url, title, text);
-                });
+                navigator.clipboard.writeText(url)
+                    .then(() => imageConverter.showNotification('Link copied to clipboard! Share it with your friends.', 'success'))
+                    .catch(() => showShareDialog(url, title, text));
             } else {
-                showShareOptions(url, title, text);
+                showShareDialog(url, title, text);
             }
         }
 
-        function showShareOptions(url, title, text) {
-            const message = `
-🚀 ${title}
-
-${text}
-
-${url}
-
-Share this awesome tool!`;
+        function showShareDialog(url, title, text) {
+            const message = `🚀 ${title}\n\n${text}\n\n${url}`;
             
-            if (confirm('Click OK to copy the share message to clipboard:')) {
-                // Manual copy fallback
-                const textArea = document.createElement('textarea');
-                textArea.value = message;
-                document.body.appendChild(textArea);
-                textArea.select();
+            // Create a temporary textarea for manual copy
+            const textArea = document.createElement('textarea');
+            textArea.value = message;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
                 document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showShareMessage('Share message copied! Paste it anywhere to share.');
+                imageConverter.showNotification('Share message copied! Paste it anywhere to share.', 'success');
+            } catch (err) {
+                // Fallback: show the message in a prompt
+                prompt('Copy this message to share:', message);
             }
+            
+            document.body.removeChild(textArea);
         }
 
-        function showShareMessage(message) {
-            // Create temporary notification
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #059669;
-                color: white;
-                padding: 16px 24px;
-                border-radius: 12px;
-                box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
-                z-index: 1000;
-                font-weight: 600;
-                animation: slideIn 0.3s ease;
-            `;
-            notification.textContent = message;
-            
-            // Add CSS animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); }
-                    to { transform: translateX(0); }
-                }
-            `;
-            document.head.appendChild(style);
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.remove();
-                style.remove();
-            }, 3000);
+        // Performance monitoring with better error handling
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const loadTime = performance.now();
+                    console.log(`✅ Image Converter loaded successfully in ${loadTime.toFixed(2)}ms`);
+                }, 0);
+            });
         }
+
+        // Error handling for uncaught errors
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            imageConverter.showNotification('An unexpected error occurred. Please refresh the page.', 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            imageConverter.showNotification('An error occurred during processing.', 'error');
+        });
     </script>
 </body>
 </html>
